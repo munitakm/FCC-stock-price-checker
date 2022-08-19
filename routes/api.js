@@ -3,61 +3,108 @@ const fetch = require('node-fetch');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 
-let stockPrice = "";
 module.exports = function (app) {
-
-const likeSchema = mongoose.Schema({stockName: {type: String, required: true}, likes: {type: Number, default: 0}, ips: [String]});
+const likeSchema = mongoose.Schema({stockName: {type: String, required: true}, likes: {type: Number, default: 0}, ips: {type: [String], default: []}});
 const Likes = mongoose.model('Likes', likeSchema);
 
   app.route('/api/stock-prices')
-    .get(function (req, res){
-		let ipAddress = bcrypt.hashSync(req.socket.remoteAddress, 12);
-		//console.log(typeof req.query.stock)
-		if(typeof req.query.stock != "object") {
-			if(req.query.likes == "true") {
+    .get(async function (req, res){
 
+	let ipAddress = bcrypt.hashSync(req.socket.remoteAddress, 12);
+		//Distinguish 1 stock input VS 2 stock inputs//
+		console.log(typeof req.query.stock);
+		if(typeof req.query.stock == "string") {
+			let stockOne = {stockName: req.query.stock.toUpperCase()};
+			console.log(1);
+			const teste = await Likes.exists(stockOne);
+		//Checking if the stock is already in the DB//
+			if(teste) {
+				console.log("existe no banco de dados");
+				if(req.query.like == "true") {
+					const ipValid = await validIp(stockOne, req.socket.remoteAddress)
+					if(ipValid) {
+						console.log("ip não encontrado, pode dar like");
+						await addLike(stockOne, ipAddress);
+						console.log("like dado")
+						const show = await sendInfo(stockOne);
+						res.send(show)
+						
+					}
+					else {
+						const show = await sendInfo(stockOne);
+						res.send(show)
+
+					}
+				} else {
+					console.log("apenas exibir o resultado")
+					const show = await sendInfo(stockOne);
+					res.send(show)
+				}
+				
+
+			}
+			else {
+				console.log("não existe no banco de dados");
+				if(req.query.lile == "true") {
+					console.log("criar com like");
+					await createStock(stockOne.stockName, req.query.like, ipAddress)
+					const show = await sendInfo(stockOne)
+					res.send(show)
+				} else {
+					console.log("criar sem like");
+					await createStock(stockOne.stockName, req.query.like, ipAddress);
+					const show = await sendInfo(stockOne)
+					res.send(show)
+				}
+
+			}
+			 	
 			}	
-		}
+		
 		else {
+			console.log(2)
 
 		}
 
 	})
 	//Functions//
-	const sendInfo = function(st) {
-		Likes.findOne(st, (err, found) => {
+	
+	const existStock = (st) => {
+		return Likes.exists({stockName: st}, (err, data) => {
 			if(err) console.log(err);
-			return {stock: found.stockName.toUpperCase(), likes: found.likes}
-		})
+			console.log(data)
+		});
 	}
-	const addLike = function(st, ip) {
-		  findAndUpdate({stockName: st}, ({$push:{ips: ip}, $inc: {likes: 1}}));
+	const sendInfo = async function(st) {
+		const finalInfo = await Likes.findOne(st);
+		let s = {"stockData": {"stock": finalInfo.stockName, "price": 99.99, "likes": finalInfo.likes}};
+		console.log(s)
+		return s
 	}
 
-	const createStock = function(st, like, ip) {
+
+	const addLike = async function(st, ip) {
+		  await Likes.findOneAndUpdate(st, ({$inc:{likes: 1}}, {$push: {ips: ip}}));
+	} 
+
+	const createStock =  async function(st, like, ip) {
 		like == "true"?
-			Likes.create({stockName: st, ips: [ip], likes: 1 })
+			await Likes.create({stockName: st, ips: [ip]})
 		:
-			Likes.create({stockName: st});
+			await Likes.create({stockName: st});
 	};
 
-	const validIp = function(st, ip, like) {
-		Likes.find({stockName: st}, (err, ipList) => {
-			if(ipList == null) return true;
-			for(n of ipList.ip) {
-				if(bcryp.compareSync(ip, n)) {
-					return  true;
-				};
-			} return false; 
-		})
-	};
+	const validIp = async function(st, ip) {
+		let listIp = await Likes.findOne(st).
+			select({ips: 1, _id: 0});
+		if(listIp == []) return true
+		for(let n of listIp.ips) {
+			if(bcrypt.compareSync(ip, n)) return false
+		}
+		return true
+	} 
+		
 
-	const existStock = function(st) {
-		Likes.find({stockName: st}, (err, found) =>{
-			if(found == null) return false;
-			return true
-		})
-	};
 
 	//End Functions
 }
