@@ -56,6 +56,8 @@ suite('Functional Tests', function() {
 			assert.equal(res.body.stockData[1].stock, stockData[1]);
 			assert.isNotNull(res.body.stockData[0].price);
 			assert.isNotNull(res.body.stockData[1].price);
+			assert.equal(res.body.stockData[0].rel_likes, likesData[0]-likesData[1]);
+			assert.equal(res.body.stockData[1].rel_likes, likesData[1]-likesData[0]);
 			done();
 			})
 });

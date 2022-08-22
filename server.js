@@ -19,11 +19,12 @@ const app = express();
 app.use(helmet({
 	contentSecurityPolicy: {directives}
 }))
-
+//--------------
+//Connet to DB//
 const mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true}).
 	then(console.log("Estamos conectados"))
-
+//--------------
 app.use('/public', express.static(process.cwd() + '/public'));
 
 app.use(cors({origin: '*'})); //For FCC testing purposes only
