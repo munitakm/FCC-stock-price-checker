@@ -3,12 +3,23 @@ require('dotenv').config();
 const express     = require('express');
 const bodyParser  = require('body-parser');
 const cors        = require('cors');
-const helmet = require('helmet')
+
+const helmet = require('helmet');
+const contentSecurityPolicy  = require('helmet-csp');
+const directives = {defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'"]}
+
 const apiRoutes         = require('./routes/api.js');
 const fccTestingRoutes  = require('./routes/fcctesting.js');
 const runner            = require('./test-runner');
 
 const app = express();
+
+// Content Security Policy //
+
+app.use(helmet({
+	contentSecurityPolicy: {directives}
+}))
+
 const mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true}).
 	then(console.log("Estamos conectados"))
