@@ -9,7 +9,7 @@ const Likes = mongoose.model('Likes', likeSchema);
 
   app.route('/api/stock-prices')
     .get(async function (req, res){
-
+	console.log(req.query)
 	let ipAddress = bcrypt.hashSync(req.socket.remoteAddress, 12);
 		//Distinguish 1 stock input VS 2 stock inputs//
 		console.log(typeof req.query.stock);
@@ -64,7 +64,7 @@ const Likes = mongoose.model('Likes', likeSchema);
 			}	
 		
 		else {
-			console.log(2);
+			console.log("Working 2 Stocks");
 			let stockTwo = req.query.stock.map(i => i.toUpperCase());
 			console.log("verificando a existência no BD");
 			for(let n of stockTwo) {
@@ -73,13 +73,18 @@ const Likes = mongoose.model('Likes', likeSchema);
 					await createStock(n, "")
 				}
 		}
-			if(validIp({stockName: stockTwo[0]}, req.socket.remoteAddress) && validIp({stockName: stockTwo[1]}, req.socket.remoteAddress) && req.query.like == "true") {
+			if(validIp({stockName: stockTwo[0]}, req.socket.remoteAddress) == true &&
+			   validIp({stockName: stockTwo[1]}, req.socket.remoteAddress) == true &&
+			   req.query.like == "true") {
+				console.log("ambos ips sào válidos")
 				await addLike({stockName: stockTwo[0]}, ipAddress);
 				await addLike({stockName: stockTwo[1]}, ipAddress);
 			}
-			let like1 = await Likes.findOne({stockName: stockTwo[0]}).select({likes: 1});
-			let like2 = await Likes.findOne({stickName: stockTwo[1]}).select({likes: 1});
-			let relativeLikes = eval(like1.likes - like2.likes);
+			let like1 = await Likes.findOne({stockName: stockTwo[0]});
+			let like2 = await Likes.findOne({stockName: stockTwo[1]});
+			console.log(like1, like2)
+			let relativeLikes = like1.likes - like2.likes;
+			console.log(relativeLikes)
 			
 			let price1 = await sendInfoTwo(stockTwo[0], relativeLikes);
 			let price2 = await sendInfoTwo(stockTwo[1], -relativeLikes);

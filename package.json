@@ -3,7 +3,8 @@
 	"version": "0.0.1",
 	"description": "InfoSec project for freeCodeCamp",
 	"scripts": {
-		"start": "nodemon server.js"
+		"start": "nodemon server.js",
+		"test": "mocha --timeout 5000 --ui tdd tests/2_functional-tests.js"		
 	},
 	"dependencies": {
 		"bcrypt": "^5.0.1",
