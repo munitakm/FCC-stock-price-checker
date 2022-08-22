@@ -64,11 +64,29 @@ const Likes = mongoose.model('Likes', likeSchema);
 			}	
 		
 		else {
-			console.log(2)
-
+			console.log(2);
+			let stockTwo = req.query.stock.map(i => i.toUpperCase());
+			console.log("verificando a existência no BD");
+			for(let n of stockTwo) {
+				let teste = await Likes.exists({stockName: n})
+				if(!teste) {
+					await createStock(n, "")
+				}
 		}
+			if(validIp({stockName: stockTwo[0]}, req.socket.remoteAddress) && validIp({stockName: stockTwo[1]}, req.socket.remoteAddress) && req.query.like == "true") {
+				await addLike({stockName: stockTwo[0]}, ipAddress);
+				await addLike({stockName: stockTwo[1]}, ipAddress);
+			}
+			let like1 = await Likes.findOne({stockName: stockTwo[0]}).select({likes: 1});
+			let like2 = await Likes.findOne({stickName: stockTwo[1]}).select({likes: 1});
+			let relativeLikes = eval(like1.likes - like2.likes);
+			
+			let price1 = await sendInfoTwo(stockTwo[0], relativeLikes);
+			let price2 = await sendInfoTwo(stockTwo[1], -relativeLikes);
+			
+			res.send({"stockData": [price1, price2]})
 
-	})
+	}})
 	//Functions//
 	
 	const getPrice = async (st) => {
@@ -77,12 +95,6 @@ const Likes = mongoose.model('Likes', likeSchema);
 		.then(json => json.latestPrice)
 	}
 	
-	const existStock = (st) => {
-		return Likes.exists({stockName: st}, (err, data) => {
-			if(err) console.log(err);
-			console.log(data)
-		});
-	}
 	const sendInfo = async function(st) {
 		const finalInfo = await Likes.findOne(st);
 		const price = await getPrice(st.stockName);
@@ -93,6 +105,10 @@ const Likes = mongoose.model('Likes', likeSchema);
 			{"stockData": {"error": "external source error", "likes": finalInfo.likes}}
 	}
 
+	const sendInfoTwo = async(st, rl) => {
+		const price = await getPrice(st);
+		return price? {"stock": st, "price": price, "rel_likes": rl}:{"rel_likes": rl};
+	}
 
 	const addLike = async function(st, ip) {
 		  await Likes.findOne(st)
