@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 
 module.exports = function (app) {
-const likeSchema = mongoose.Schema({stockName: {type: String, required: true}, likes: {type: Number, default: 0}, ips: {type: [String], default: ["casa"]}});
+const likeSchema = mongoose.Schema({stockName: {type: String, required: true}, likes: {type: Number, default: 0}, ips: {type: [String], default: []}});
 const Likes = mongoose.model('Likes', likeSchema);
 
   app.route('/api/stock-prices')
@@ -73,12 +73,13 @@ const Likes = mongoose.model('Likes', likeSchema);
 					await createStock(n, "")
 				}
 		}
-			if(validIp({stockName: stockTwo[0]}, req.socket.remoteAddress) == true &&
-			   validIp({stockName: stockTwo[1]}, req.socket.remoteAddress) == true &&
-			   req.query.like == "true") {
-				console.log("ambos ips sào válidos")
-				await addLike({stockName: stockTwo[0]}, ipAddress);
-				await addLike({stockName: stockTwo[1]}, ipAddress);
+
+			let val1 = await validIp({stockName: stockTwo[0]}, req.socket.remoteAddress); 
+			let val2 = await validIp({stockName: stockTwo[1]}, req.socket.remoteAddress);
+			console.log(val1, val2, req.query.like)
+			if(val1 == true && val2 == true && req.query.like == "true") {
+			await addLike({stockName: stockTwo[0]}, ipAddress);
+			await addLike({stockName: stockTwo[1]}, ipAddress);
 			}
 			let like1 = await Likes.findOne({stockName: stockTwo[0]});
 			let like2 = await Likes.findOne({stockName: stockTwo[1]});
