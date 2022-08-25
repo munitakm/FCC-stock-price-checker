@@ -6,12 +6,12 @@ const server = require('../server.js');
 chai.use(chaiHttp);
 
 suite('Functional Tests', function() {
-	let stockData = ["GOOG", "MSFT"];
+	let stockData = ["AMZN", "SPOT"];
 	var likesData = [0, 0];
 	test('Viewing one stock: GET request to /api/stock-prices/', (done) => {
 		chai.request(server)
 		.get('/api/stock-prices')
-		.query({stock: stockData[0]})
+		.query({stock: stockData[0], like: "false"})
 		.end((err, res) => {
 			likesData[0] = res.body.stockData.likes;
 			assert.equal(res.status, 200)
@@ -49,13 +49,11 @@ suite('Functional Tests', function() {
 	test('Viewing two stocks: GET request to /api/stock-prices/', (done) => {
 		chai.request(server)
 		.get('/api/stock-prices')
-		.query({stock: [stockData[0], stockData[1]]})
+		.query({stock: [stockData[0], stockData[1]], like: "false"})
 		.end((err, res) => {
 			assert.equal(res.status, 200)
 			assert.equal(res.body.stockData[0].stock, stockData[0]);
 			assert.equal(res.body.stockData[1].stock, stockData[1]);
-			assert.isNotNull(res.body.stockData[0].price);
-			assert.isNotNull(res.body.stockData[1].price);
 			assert.equal(res.body.stockData[0].rel_likes, likesData[0]-likesData[1]);
 			assert.equal(res.body.stockData[1].rel_likes, likesData[1]-likesData[0]);
 			done();
@@ -69,8 +67,6 @@ suite('Functional Tests', function() {
 			assert.equal(res.status, 200)
 			assert.equal(res.body.stockData[0].stock, stockData[0]);
 			assert.equal(res.body.stockData[1].stock, stockData[1]);
-			assert.isNotNull(res.body.stockData[0].price);
-			assert.isNotNull(res.body.stockData[1].price);
 			assert.equal(res.body.stockData[0].rel_likes, likesData[0]-likesData[1]);
 			assert.equal(res.body.stockData[1].rel_likes, likesData[1]-likesData[0]);
 			done();

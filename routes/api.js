@@ -70,17 +70,17 @@ const Likes = mongoose.model('Likes', likeSchema);
 			for(let n of stockTwo) {
 				let teste = await Likes.exists({stockName: n})
 				if(!teste) {
-					await createStock(n, "")
+					await createStock(n, "false")
 				}
 		}
 
-			let val1 = await validIp({stockName: stockTwo[0]}, req.socket.remoteAddress); 
-			let val2 = await validIp({stockName: stockTwo[1]}, req.socket.remoteAddress);
-			console.log(val1, val2, req.query.like)
-			if(val1 == true && val2 == true && req.query.like == "true") {
-			await addLike({stockName: stockTwo[0]}, ipAddress);
-			await addLike({stockName: stockTwo[1]}, ipAddress);
+			if(req.query.like == "true") {
+				for(let i of stockTwo) {
+					let valIp = await validIp({stockName: i}, req.socket.remoteAddress)
+					if(valIp == true) await addLike({stockName: i}, ipAddress); 
+				}
 			}
+			
 			let like1 = await Likes.findOne({stockName: stockTwo[0]});
 			let like2 = await Likes.findOne({stockName: stockTwo[1]});
 			console.log(like1, like2)
@@ -89,6 +89,7 @@ const Likes = mongoose.model('Likes', likeSchema);
 			
 			let price1 = await sendInfoTwo(stockTwo[0], relativeLikes);
 			let price2 = await sendInfoTwo(stockTwo[1], -relativeLikes);
+			console.log(req.query)
 			
 			res.send({"stockData": [price1, price2]})
 
@@ -130,9 +131,8 @@ const Likes = mongoose.model('Likes', likeSchema);
 	};
 
 	const validIp = async function(st, ip) {
-		let listIp = await Likes.findOne(st).
-			select({ips: 1, _id: 0});
-		if(listIp == []) return true
+		let listIp = await Likes.findOne(st);
+		if(listIp.ips == []) return true
 		for(let n of listIp.ips) {
 			if(bcrypt.compareSync(ip, n)) return false
 		}
